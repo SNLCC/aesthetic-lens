@@ -225,9 +225,9 @@ def build() -> Dict[str, Any]:
     # L4 cross-profiles: style × content-type intersections
     for s_tag in style_tags:
         for ct_tag in ct_tags:
-            matched = [d for d in l1s
-                       if s_tag in (d.get("tags", {}).get("styles", []) or [])
-                       and ct_tag in (d.get("tags", {}).get("content_types", []) or [])]
+            matched = [_d for _, _d in l1s
+                       if s_tag in (_d.get("tags", {}).get("styles", []) or [])
+                       and ct_tag in (_d.get("tags", {}).get("content_types", []) or [])]
             if len(matched) >= 2:
                 cid = f"{alias_map.get(s_tag, _slug(s_tag))}-{alias_map.get(ct_tag, _slug(ct_tag))}"
                 _write_card({
