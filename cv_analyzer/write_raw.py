@@ -27,6 +27,7 @@ Usage::
     )
 """
 
+import hashlib
 import json
 import os
 import uuid
@@ -69,8 +70,27 @@ def _sanitize_filename(name: str) -> str:
     return safe.strip().replace(" ", "_")
 
 
+def find_l1_by_hash(image_hash: str, raw_dir: str = RAW_DIR) -> List[str]:
+    """Return paths of L1 JSONs whose ``image_hash`` matches."""
+    if not os.path.isdir(raw_dir):
+        return []
+    matches = []
+    for fn in sorted(os.listdir(raw_dir)):
+        if not fn.endswith(".json"):
+            continue
+        fp = os.path.join(raw_dir, fn)
+        try:
+            with open(fp, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data.get("image_hash") == image_hash:
+                matches.append(fp)
+        except (json.JSONDecodeError, OSError):
+            continue
+    return matches
+
+
 def find_l1_by_source(source_name: str, raw_dir: str = RAW_DIR) -> List[str]:
-    """Return paths of all L1 JSONs in raw_dir whose source_image matches."""
+    """Return paths of all L1 JSONs whose source_image matches (legacy)."""
     if not os.path.isdir(raw_dir):
         return []
     matches = []
@@ -121,17 +141,22 @@ def write_raw(
 
     source_name = os.path.basename(image_path)
 
-    # upsert/overwrite: reuse existing file if found
+    # upsert/overwrite: reuse existing file by image content hash
     if mode in ("upsert", "overwrite"):
-        existing = find_l1_by_source(source_name)
-        if existing:
-            # Use the most recent matching file
-            dest = existing[-1]
-            # Build and write directly
-            record = _build_record(source_name, cv_data, ai_interpretation, tags)
-            with open(dest, "w", encoding="utf-8") as f:
-                json.dump(record, f, indent=2, ensure_ascii=False)
-            return os.path.abspath(dest)
+        # Compute hash of actual image bytes (not filename!)
+        try:
+            with open(image_path, "rb") as f:
+                img_hash = hashlib.sha256(f.read()).hexdigest()[:16]
+        except OSError:
+            img_hash = None
+        if img_hash:
+            existing = find_l1_by_hash(img_hash)
+            if existing:
+                dest = existing[-1]
+                record = _build_record(source_name, img_hash, cv_data, ai_interpretation, tags)
+                with open(dest, "w", encoding="utf-8") as f:
+                    json.dump(record, f, indent=2, ensure_ascii=False)
+                return os.path.abspath(dest)
 
     # append: always create new file
     base = _sanitize_filename(os.path.splitext(source_name)[0])
@@ -140,7 +165,14 @@ def write_raw(
     filename = f"{base}_{ts}_{uid}.json"
     dest = os.path.join(RAW_DIR, filename)
 
-    record = _build_record(source_name, cv_data, ai_interpretation, tags)
+    # Compute image hash for fingerprinting
+    try:
+        with open(image_path, "rb") as f:
+            img_hash = hashlib.sha256(f.read()).hexdigest()[:16]
+    except OSError:
+        img_hash = None
+
+    record = _build_record(source_name, img_hash, cv_data, ai_interpretation, tags)
     with open(dest, "w", encoding="utf-8") as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
 
@@ -149,6 +181,7 @@ def write_raw(
 
 def _build_record(
     source_name: str,
+    image_hash: Optional[str],
     cv_data: Dict[str, Any],
     ai_interpretation: Optional[Dict[str, str]],
     tags: Optional[Dict[str, List[str]]],
@@ -160,6 +193,8 @@ def _build_record(
         "analyzed_at": datetime.now(timezone.utc).isoformat(),
         "cv_data": cv_data,
     }
+    if image_hash:
+        record["image_hash"] = image_hash
 
     if ai_interpretation:
         record["ai_interpretation"] = ai_interpretation

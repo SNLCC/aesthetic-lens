@@ -230,10 +230,11 @@ def build() -> Dict[str, Any]:
                        and ct_tag in (_d.get("tags", {}).get("content_types", []) or [])]
             if len(matched) >= 2:
                 cid = f"{alias_map.get(s_tag, _slug(s_tag))}-{alias_map.get(ct_tag, _slug(ct_tag))}"
-                _write_card({
-                    "id": cid, "style": s_tag, "content_type": ct_tag,
-                    "source_count": len(matched), "updated_at": datetime.now(timezone.utc).isoformat(),
-                }, "cross")
+                # Reuse _build_style_card to get cv_profile + ai_patterns
+                card = _build_style_card(s_tag, matched, alias_map)
+                card["content_type"] = ct_tag
+                card["id"] = cid
+                _write_card(card, "cross")
                 summary.setdefault("cross_written", []).append(cid)
 
     _save_index(idx)
