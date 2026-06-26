@@ -93,7 +93,9 @@ def _discover_tags(l1s: List[Tuple[str, Dict]], alias_map: Dict[str, str]) -> Di
     return alias_map
 
 
-def _aggregate_l1s(l1s: List[Tuple[str, Dict]], tag_key: str, target_tag: str) -> List[Dict]:
+def _aggregate_l1s(l1s: List[Tuple[str, Dict]], tag_key: str, target_tag: str,
+                     min_confidence: str = "low") -> List[Dict]:
+    """Return L1s with target_tag. Skips incomplete L1s when min_confidence="high"."""
     matched = []
     for _fp, data in l1s:
         tags = data.get("tags", {}) or {}

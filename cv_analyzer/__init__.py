@@ -4,6 +4,7 @@ All dependencies are BSD/MIT/PSF licensed (commercially safe).
 Measurements output structured dicts consumed by Reasonix AI interpretation.
 """
 
+from .ai_fills_schema import validate_ai_fills, ai_fills_blank
 from .analyze import analyze
 from .build_library import build
 from .classify import classify
@@ -13,9 +14,10 @@ from .composition import analyze_composition
 from .lighting import analyze_lighting
 from .spacing import analyze_spacing
 from .texture import analyze_texture
-from .write_raw import write_raw, get_library_dir
+from .write_raw import write_raw, find_l1_by_source, get_library_dir
 
 __all__ = [
+    "ai_fills_blank",
     "analyze",
     "analyze_color",
     "analyze_components",
@@ -25,6 +27,8 @@ __all__ = [
     "analyze_texture",
     "build",
     "classify",
+    "find_l1_by_source",
     "get_library_dir",
+    "validate_ai_fills",
     "write_raw",
 ]

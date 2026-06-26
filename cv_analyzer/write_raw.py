@@ -69,11 +69,31 @@ def _sanitize_filename(name: str) -> str:
     return safe.strip().replace(" ", "_")
 
 
+def find_l1_by_source(source_name: str, raw_dir: str = RAW_DIR) -> List[str]:
+    """Return paths of all L1 JSONs in raw_dir whose source_image matches."""
+    if not os.path.isdir(raw_dir):
+        return []
+    matches = []
+    for fn in sorted(os.listdir(raw_dir)):
+        if not fn.endswith(".json"):
+            continue
+        fp = os.path.join(raw_dir, fn)
+        try:
+            with open(fp, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data.get("source_image") == source_name:
+                matches.append(fp)
+        except (json.JSONDecodeError, OSError):
+            continue
+    return matches
+
+
 def write_raw(
     image_path: str,
     cv_data: Dict[str, Any],
     ai_interpretation: Optional[Dict[str, str]] = None,
     tags: Optional[Dict[str, List[str]]] = None,
+    mode: str = "append",
 ) -> str:
     """Write a L1 raw profile and return its file path.
 
@@ -82,14 +102,15 @@ def write_raw(
     image_path : str
         Original image path (used for filename derivation only).
     cv_data : dict
-        Output from ``cv_analyzer.analyze()`` — must contain ``metadata``
-        and at least one sub-analysis dict.
+        Output from ``cv_analyzer.analyze()``.
     ai_interpretation : dict or None
-        AI-supplied interpretations for the fields listed in
-        ``cv_data["ai_fills_required"]`` (if absent, the L1 record is
-        marked ``incomplete: true``).
+        AI-supplied interpretations.
     tags : dict or None
-        Categorisation tags, e.g. ``{"styles": ["极简"], "content_types": ["教程"]}``.
+        Categorisation tags.
+    mode : str
+        ``"append"`` — always create a new file (default, backward compatible).
+        ``"upsert"`` — if a L1 with the same source_image exists, overwrite it.
+        ``"overwrite"`` — same as upsert (alias).
 
     Returns
     -------
@@ -98,17 +119,44 @@ def write_raw(
     """
     os.makedirs(RAW_DIR, exist_ok=True)
 
-    # Derive a unique file name (UUID prevents same-second overwrites)
-    base = _sanitize_filename(os.path.splitext(os.path.basename(image_path))[0])
+    source_name = os.path.basename(image_path)
+
+    # upsert/overwrite: reuse existing file if found
+    if mode in ("upsert", "overwrite"):
+        existing = find_l1_by_source(source_name)
+        if existing:
+            # Use the most recent matching file
+            dest = existing[-1]
+            # Build and write directly
+            record = _build_record(source_name, cv_data, ai_interpretation, tags)
+            with open(dest, "w", encoding="utf-8") as f:
+                json.dump(record, f, indent=2, ensure_ascii=False)
+            return os.path.abspath(dest)
+
+    # append: always create new file
+    base = _sanitize_filename(os.path.splitext(source_name)[0])
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     uid = uuid.uuid4().hex[:8]
     filename = f"{base}_{ts}_{uid}.json"
     dest = os.path.join(RAW_DIR, filename)
 
-    # Build the L1 record — CV data first, then AI overlay
+    record = _build_record(source_name, cv_data, ai_interpretation, tags)
+    with open(dest, "w", encoding="utf-8") as f:
+        json.dump(record, f, indent=2, ensure_ascii=False)
+
+    return os.path.abspath(dest)
+
+
+def _build_record(
+    source_name: str,
+    cv_data: Dict[str, Any],
+    ai_interpretation: Optional[Dict[str, str]],
+    tags: Optional[Dict[str, List[str]]],
+) -> Dict[str, Any]:
+    """Construct the L1 record dict (shared by append and upsert paths)."""
     record: Dict[str, Any] = {
-        "l1_version": "1.0.0",
-        "source_image": os.path.basename(image_path),
+        "l1_version": "1.2.0",
+        "source_image": source_name,
         "analyzed_at": datetime.now(timezone.utc).isoformat(),
         "cv_data": cv_data,
     }
@@ -117,7 +165,6 @@ def write_raw(
         record["ai_interpretation"] = ai_interpretation
         record["incomplete"] = False
     else:
-        # AI interpretation (requires LLM vision) was not provided
         record["incomplete"] = True
         record["incomplete_reason"] = (
             "AI aesthetic interpretation not provided. "
@@ -127,7 +174,4 @@ def write_raw(
     if tags:
         record["tags"] = tags
 
-    with open(dest, "w", encoding="utf-8") as f:
-        json.dump(record, f, indent=2, ensure_ascii=False)
-
-    return os.path.abspath(dest)
+    return record
