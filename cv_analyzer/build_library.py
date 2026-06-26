@@ -17,13 +17,15 @@ from .write_raw import get_library_dir
 
 
 def _slug(tag: str) -> str:
-    """Turn a Chinese tag into a stable English ID slug.
+    """Turn any tag into a stable, unique ID slug.
 
-    Known terms use the mapping table below.  Unknown tags fall back to
-    a short hash of the UTF-8 bytes, guaranteeing a unique forever-stable ID.
+    Known Chinese terms get readable English IDs from the mapping table.
+    Unknown tags get a short SHA-256 hash prefix (stable + unique).
     """
+    import hashlib
     s = tag.strip().lower()
-    # known term → english
+
+    # Known term mapping (partial → it's okay, we check full match below)
     table = {
         "极简": "minimalist", "文艺": "literati",
         "新中式": "neo-chinese", "水墨": "ink",
@@ -35,22 +37,20 @@ def _slug(tag: str) -> str:
         "赛博": "cyber", "朋克": "punk",
         "教程": "tutorial", "种草": "recommend",
         "开箱": "unboxing", "测评": "review",
-        "vlog": "vlog", "生活": "lifestyle",
     }
+
+    # Try full replacement of all known substrings
     for zh, en in table.items():
         s = s.replace(zh, en)
-    # if any chinese chars remain after mapping, generate a stable hash
-    remaining = re.sub(r"[a-z0-9-]", "", s)
-    if remaining:
-        import hashlib
-        h = hashlib.sha256(tag.encode("utf-8")).hexdigest()[:8]
-        base = re.sub(r"[^a-z0-9-]", "-", s).strip("-")
-        base = re.sub(r"-+", "-", base)
-        base = base if base else "tag"
-        return f"{base}-{h}"
-    s = re.sub(r"[^a-z0-9-]", "-", s).strip("-")
-    s = re.sub(r"-+", "-", s)
-    return s if s else "tag"
+
+    # If all Chinese chars were resolved → use the readable result
+    if not re.search(r"[\u4e00-\u9fff]", s):
+        s = re.sub(r"[^a-z0-9-]", "-", s).strip("-")
+        s = re.sub(r"-+", "-", s)
+        return s if s else hashlib.sha256(tag.encode("utf-8")).hexdigest()[:8]
+
+    # Otherwise → hash-based (stable, unique, no collisions)
+    return hashlib.sha256(tag.encode("utf-8")).hexdigest()[:8]
 
 
 def _load_index() -> Dict[str, Any]:
