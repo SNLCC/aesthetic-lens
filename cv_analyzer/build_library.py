@@ -17,8 +17,13 @@ from .write_raw import get_library_dir
 
 
 def _slug(tag: str) -> str:
-    """Turn a Chinese tag into an English ID slug."""
+    """Turn a Chinese tag into a stable English ID slug.
+
+    Known terms use the mapping table below.  Unknown tags fall back to
+    a short hash of the UTF-8 bytes, guaranteeing a unique forever-stable ID.
+    """
     s = tag.strip().lower()
+    # known term → english
     table = {
         "极简": "minimalist", "文艺": "literati",
         "新中式": "neo-chinese", "水墨": "ink",
@@ -34,6 +39,15 @@ def _slug(tag: str) -> str:
     }
     for zh, en in table.items():
         s = s.replace(zh, en)
+    # if any chinese chars remain after mapping, generate a stable hash
+    remaining = re.sub(r"[a-z0-9-]", "", s)
+    if remaining:
+        import hashlib
+        h = hashlib.sha256(tag.encode("utf-8")).hexdigest()[:8]
+        base = re.sub(r"[^a-z0-9-]", "-", s).strip("-")
+        base = re.sub(r"-+", "-", base)
+        base = base if base else "tag"
+        return f"{base}-{h}"
     s = re.sub(r"[^a-z0-9-]", "-", s).strip("-")
     s = re.sub(r"-+", "-", s)
     return s if s else "tag"
@@ -170,7 +184,7 @@ def build() -> Dict[str, Any]:
     idx = _load_index()
     alias_map: Dict[str, str] = idx.get("tag_alias_map", {})
     l1s = _l1_files()
-    summary = {"l1_count": len(l1s), "tags_discovered": 0, "styles_written": [], "content_types_written": []}
+    summary = {"l1_count": len(l1s), "tags_discovered": 0, "styles_written": [], "content_types_written": [], "cross_written": []}
     if not l1s:
         return summary
 
@@ -207,6 +221,21 @@ def build() -> Dict[str, Any]:
     idx["styles"] = sorted(style_tags)
     idx["content_types"] = sorted(ct_tags)
     idx["raw_images"] = sorted(set(d.get("source_image", "") for _, d in l1s))
+
+    # L4 cross-profiles: style × content-type intersections
+    for s_tag in style_tags:
+        for ct_tag in ct_tags:
+            matched = [d for d in l1s
+                       if s_tag in (d.get("tags", {}).get("styles", []) or [])
+                       and ct_tag in (d.get("tags", {}).get("content_types", []) or [])]
+            if len(matched) >= 2:
+                cid = f"{alias_map.get(s_tag, _slug(s_tag))}-{alias_map.get(ct_tag, _slug(ct_tag))}"
+                _write_card({
+                    "id": cid, "style": s_tag, "content_type": ct_tag,
+                    "source_count": len(matched), "updated_at": datetime.now(timezone.utc).isoformat(),
+                }, "cross")
+                summary.setdefault("cross_written", []).append(cid)
+
     _save_index(idx)
 
     # Trigger universal model if enough data
