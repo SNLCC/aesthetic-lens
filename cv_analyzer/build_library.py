@@ -81,7 +81,8 @@ def _l1_files() -> List[Tuple[str, Dict]]:
         try:
             with open(fp, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            results.append((fp, data))
+            if not data.get("incomplete"):
+                results.append((fp, data))
         except (json.JSONDecodeError, OSError):
             continue
     return results
