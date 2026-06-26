@@ -13,16 +13,21 @@
 git clone https://github.com/SNLCC/aesthetic-lens.git
 cd aesthetic-lens
 
-# 安装依赖（创建 venv + pip install）
+# 安装依赖
 source scripts/install_deps.sh
 
-# CV 分析一张图片
-source .venv/bin/activate  # 或 .venv/Scripts/activate (Windows)
+# 激活 venv
+source .venv/bin/activate       # Unix/Mac
+# 或 .venv\Scripts\activate     # Windows
+
+# CV 分析
 python -m cv_analyzer.cli path/to/image.jpg --pretty
 
 # 运行测试
 python -m pytest cv_analyzer/test_*.py -v
 ```
+
+> **Windows 用户**：如遇到中文路径乱码，先在 PowerShell 中执行 `chcp 65001`，或使用 Git Bash。
 
 ## 工作流
 
@@ -60,5 +65,12 @@ python -m pytest cv_analyzer/test_*.py -v
 | L4 交叉层 | 风格×类型最佳实践 | 待建 |
 | L5 统摄层 | "什么是好设计"的核心公理 | ≥10 张 L1 自动 |
 
-标签不预置——AI 自由命名，`build_library` 自动注册到 `tag_alias_map`。
+## 标签机制（两套并行，不预设）
+
+| 来源 | 标签位置 | 说明 |
+|------|---------|------|
+| `classify.py`（CV 启发式） | `cv_classification.styles` | **AI 参考**，硬编码 10 个常见风格名作为初判线索 |
+| AI 审美解读 | `tags.styles` | **最终标签**，AI 自由命名，`build_library` 据此构建风格库 |
+
+`cv_classification` 不等于最终分类。AI 可以覆盖、修正或新增任意标签。
 

@@ -1,8 +1,12 @@
 """Style & content-type classifier — gives a first-pass classification purely
 from CV measurements, before AI interpretation.
 
-The classifier's output goes into ``cv_data["cv_classification"]`` so the AI
-can compare its own judgement against the machine's and calibrate biases.
+⚠️  These are **heuristic hints for AI reference only**, NOT final tags.
+The real style/content-type tags are assigned by the AI in ``tags.styles``
+and ``tags.content_types`` during the aesthetic interpretation step.
+``build_library()`` collects tags from AI-assigned L1 fields, not from here.
+
+The classifier's output goes into ``cv_data["cv_classification"]``.
 """
 
 from typing import Any, Dict, List
