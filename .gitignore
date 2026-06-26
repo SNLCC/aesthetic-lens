@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.egg
+dist/
+build/
+
+# Agent/IDE runtime state
+.reasonix/
+.superpowers/
+
+# Test cache
+.pytest_cache/
+
+# Data — user-generated analysis results
+aesthetic-lens/library/raw/
+aesthetic-lens/library/styles/
+aesthetic-lens/library/content_types/
+aesthetic-lens/library/cross/
+
+# Keep scaffold files but not generated data
+!aesthetic-lens/library/index.json
+!aesthetic-lens/library/universal.json

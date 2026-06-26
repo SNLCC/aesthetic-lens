@@ -1,0 +1,9 @@
+# Aesthetic Lens - CV Analysis Dependencies
+# All packages are BSD/MIT/PSF licensed, commercially safe
+
+# opencv-contrib-python includes saliency, extra modules
+opencv-contrib-python>=4.9.0
+numpy>=1.24.0
+scikit-image>=0.22.0
+colorthief>=0.2.1
+click>=8.1.0
