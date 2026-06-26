@@ -62,6 +62,3 @@ python -m pytest cv_analyzer/test_*.py -v
 
 标签不预置——AI 自由命名，`build_library` 自动注册到 `tag_alias_map`。
 
-## 开源合规
-
-本项目使用 MIT 许可证。所有依赖均为开源宽松许可证（Apache 2.0 / BSD-3 / HPND），可商用。

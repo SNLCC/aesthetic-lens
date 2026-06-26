@@ -119,6 +119,3 @@ library/
 └── universal.json L5
 ```
 
-## 许可证
-
-本项目全部代码和数据使用 MIT 许可证。依赖项均为 BSD/MIT/PSF 许可，可商用。
