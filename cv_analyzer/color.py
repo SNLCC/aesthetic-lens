@@ -32,7 +32,12 @@ def _extract_palette_kmeans(image: np.ndarray, n_colors: int = 5) -> List[Tuple[
 
 
 def _compute_saturation_lightness(image: np.ndarray) -> Dict:
-    """Compute saturation and lightness statistics in HSL space."""
+    """Compute saturation and lightness statistics in HSL space.
+
+    ⚠️ HLS saturation is unreliable when lightness is near 0 (pure black)
+    or 255 (pure white) — these edge values can produce misleading stats.
+    For very dark images, rely more on contrast/brightness from lighting.py.
+    """
     hls = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
     saturation = hls[:, :, 2].flatten()
     lightness = hls[:, :, 1].flatten()
