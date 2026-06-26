@@ -43,6 +43,7 @@ SCHEMA: Dict[str, Optional[set]] = {
     "typography_text_density": TEXT_DENSITIES,
     "typography_alignment": ALIGNMENTS,
     "typography_font_style": FONT_STYLES,
+    "style_influence": None,  # free-form design movement/era reference
 }
 
 REQUIRED_AI_KEYS = list(SCHEMA.keys())

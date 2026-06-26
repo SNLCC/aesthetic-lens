@@ -116,5 +116,7 @@ def analyze(image_path: str) -> Dict[str, Any]:
         "typography.text_density",
         "typography.alignment",
         "typography.font_style",
+        # Aesthetic interpretation
+        "style_influence",
     ]
     return analyses
