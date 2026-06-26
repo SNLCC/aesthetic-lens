@@ -1,31 +1,32 @@
-"""Style & content-type classifier — gives a first-pass classification purely
-from CV measurements, before AI interpretation.
+"""Style & content-type classifier — translates CV measurements into
+descriptive traits that the AI can use for tag naming.
 
-⚠️  These are **heuristic hints for AI reference only**, NOT final tags.
-The real style/content-type tags are assigned by the AI in ``tags.styles``
-and ``tags.content_types`` during the aesthetic interpretation step.
-``build_library()`` collects tags from AI-assigned L1 fields, not from here.
+⚠️  This module does NOT assign style names like "极简文艺" or "复古胶片".
+It outputs **numerical/descriptive indicators** (e.g. "low_saturation",
+"high_symmetry") that the AI interprets into free-form tags.
 
-The classifier's output goes into ``cv_data["cv_classification"]``.
+There are no preset labels anywhere in the pipeline.  Tags are always
+assigned by the AI in ``tags.styles`` / ``tags.content_types``, and
+``build_library()`` discovers them dynamically.
 """
 
 from typing import Any, Dict, List
 
 
+def _trait(val: float, low: float, high: float) -> str:
+    if val <= low:
+        return "low"
+    if val >= high:
+        return "high"
+    return "mid"
+
+
 def classify(cv_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Return a first-pass style / content-type guess from CV data only.
+    """Return descriptive traits from CV data.
 
-    Parameters
-    ----------
-    cv_data : dict
-        The output of ``cv_analyzer.analyze()``.
-
-    Returns
-    -------
-    dict with keys:
-        - ``styles``: list of candidate style tags (may be empty)
-        - ``content_types``: list of candidate content-type tags (may be empty)
-        - ``confidence``: ``"high"``, ``"medium"``, or ``"low"``
+    Returns dict with keys:
+        - ``traits``: dict of descriptive indicators (no preset label names)
+        - ``confidence``: ``"high"`` | ``"medium"`` | ``"low"``
     """
     color = cv_data.get("color", {}) or {}
     composition = cv_data.get("composition", {}) or {}
@@ -33,79 +34,54 @@ def classify(cv_data: Dict[str, Any]) -> Dict[str, Any]:
     spacing = cv_data.get("spacing", {}) or {}
     texture = cv_data.get("texture", {}) or {}
 
-    styles: List[str] = []
-    content_types: List[str] = []
-
-    # ----- style heuristics -----
-
     sat = color.get("saturation_stats", {}) or {}
     lit = color.get("lightness_stats", {}) or {}
     mean_sat = sat.get("mean", 128)
     mean_lit = lit.get("mean", 128)
     sym = composition.get("symmetry_score", 0)
     neg = spacing.get("negative_space_ratio", 0)
-    cmp = texture.get("texture_complexity", 0)
+    tex = texture.get("texture_complexity", 0)
     contrast = lighting.get("contrast", 0)
 
-    # 极简文艺 — high negative space, low saturation, mid lightness
-    if neg > 0.4 and mean_sat < 80 and 80 < mean_lit < 200:
-        styles.append("极简文艺")
+    traits: Dict[str, str] = {}
 
-    # 复古胶片 — low saturation, low contrast; exclude very dark (夜读风/暗黑系)
-    if mean_sat < 90 and contrast < 0.3 and mean_lit > 80:
-        styles.append("复古胶片")
+    # Color traits
+    if mean_sat < 80:
+        traits["saturation"] = "low"
+    elif mean_sat > 140:
+        traits["saturation"] = "high"
+    else:
+        traits["saturation"] = "mid"
 
-    # 赛博朋克 — high contrast, high saturation, vibrant
-    if contrast > 0.4 and mean_sat > 140:
-        styles.append("赛博朋克")
+    if mean_lit < 80:
+        traits["lightness"] = "dark"
+    elif mean_lit > 180:
+        traits["lightness"] = "bright"
+    else:
+        traits["lightness"] = "mid"
 
-    # 自然森系 — high texture complexity, mid lightness
-    if cmp > 0.5 and 100 < mean_lit < 180:
-        styles.append("自然森系")
+    # Composition traits
+    if sym > 0.65:
+        traits["symmetry"] = "high"
+    elif sym < 0.35:
+        traits["symmetry"] = "low"
+    else:
+        traits["symmetry"] = "mid"
 
-    # 科技极客 — high symmetry, high contrast, low negative space
-    if sym > 0.7 and contrast > 0.35 and neg < 0.3:
-        styles.append("科技极客")
+    traits["contrast"] = _trait(contrast, 0.25, 0.4)
+    traits["negative_space"] = _trait(neg, 0.3, 0.5)
+    traits["texture"] = _trait(tex, 0.3, 0.6)
 
-    # 暗黑系 — very low lightness
-    if mean_lit < 60:
-        styles.append("暗黑系")
-
-    # 轻奢质感 — mid-high saturation, mid lightness, mid symmetry
-    if 100 < mean_sat < 160 and 120 < mean_lit < 200 and sym > 0.5:
-        styles.append("轻奢质感")
-
-    # 新中式水墨 — low saturation, mid lightness, high negative space
-    if mean_sat < 70 and 100 < mean_lit < 190 and neg > 0.3:
-        styles.append("新中式水墨")
-
-    # 治愈系 — mid lightness, mid saturation, high negative space
-    if 100 < mean_lit < 200 and 60 < mean_sat < 130 and neg > 0.35:
-        styles.append("治愈系")
-
-    # 夜读风 — very low lightness, mid-low saturation
-    if mean_lit < 80 and mean_sat < 100:
-        styles.append("夜读风")
-
-    # ----- content-type heuristics -----
-
-    # 教程 — high symmetry, content dense
-    if sym > 0.6 and neg < 0.35:
-        content_types.append("教程")
-
-    # 开箱 / 产品展示 — centered, high symmetry
-    if sym > 0.7 and neg < 0.4:
-        content_types.append("开箱")
-
-    # Vlog / 生活记录 — varied composition
-    if 0.2 < sym < 0.6 and 0.3 < neg < 0.6:
-        content_types.append("Vlog")
-
-    # ----- confidence -----
-    confidence = "high" if len(styles) >= 2 or (len(styles) == 1 and len(content_types) >= 1) else "medium" if styles else "low"
+    # Confidence based on how many traits are "mid" (boring/ambiguous) vs extreme
+    extremes = sum(1 for v in traits.values() if v in ("low", "high"))
+    if extremes >= 3:
+        confidence = "high"
+    elif extremes >= 1:
+        confidence = "medium"
+    else:
+        confidence = "low"
 
     return {
-        "styles": styles,
-        "content_types": content_types,
+        "traits": traits,
         "confidence": confidence,
     }

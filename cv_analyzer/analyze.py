@@ -41,7 +41,7 @@ def analyze(image_path: str) -> Dict[str, Any]:
         - ``error``: error message (only present when status is ``"error"``)
         - ``degraded_modules``: list of failed module names (only when ``"degraded"``)
         - ``ai_fills_required``: list of fields the downstream AI should populate
-        - ``cv_classification``: first-pass style/content-type guess (see ``classify.py``)
+        - ``cv_classification``: first-pass descriptive traits (see ``classify.py``)
         - ``metadata``: dict with *width*, *height*, *channels*
         - top-level keys from each sub-analysis:
             *color*, *composition*, *texture*, *lighting*, *spacing*, *components*
