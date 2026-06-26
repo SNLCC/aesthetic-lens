@@ -205,14 +205,15 @@ def build() -> Dict[str, Any]:
 
     for tag in sorted(style_tags):
         matched = _aggregate_l1s(l1s, "styles", tag)
-        if matched:
+        if len(matched) >= 2:
             card = _build_style_card(tag, matched, alias_map)
-            _write_card(card, "styles")
-            summary["styles_written"].append(tag)
+            if card:
+                _write_card(card, "styles")
+                summary["styles_written"].append(tag)
 
     for tag in sorted(ct_tags):
         matched = _aggregate_l1s(l1s, "content_types", tag)
-        if matched:
+        if len(matched) >= 2:
             card = _build_style_card(tag, matched, alias_map)
             _write_card(card, "content_types")
             summary["content_types_written"].append(tag)
@@ -267,8 +268,13 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
 
     # Collect all AI interpretation values across all L1s
     schemes, layouts, surfaces, lights, spacings, roles = [], [], [], [], [], []
+    syms, contrast_vals, lit_vals = [], [], []
     for _, d in l1s:
         ai = d.get("ai_interpretation", {}) or {}
+        cv = d.get("cv_data", {}) or {}
+        comp = cv.get("composition", {}) or {}
+        light = cv.get("lighting", {}) or {}
+        col = cv.get("color", {}) or {}
         if ai.get("color_scheme"):
             schemes.append(ai["color_scheme"])
         if ai.get("layout_type"):
@@ -279,6 +285,9 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
             lights.append(ai["light_quality"])
         if ai.get("spacing_principle"):
             spacings.append(ai["spacing_principle"])
+        syms.append(comp.get("symmetry_score", 0))
+        contrast_vals.append(light.get("contrast", 0))
+        lit_vals.append((col.get("lightness_stats", {}) or {}).get("mean", 128))
 
     # Frequency distribution
     def _freq(vals):
@@ -294,6 +303,35 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
         "light_qualities": _freq(lights),
         "spacing_principles": _freq(spacings),
     }
+
+    # Generate derived principles from the observed data
+    # (these are statistical, not LLM-generated — LLM can enrich later)
+    principles = []
+    laws = []
+    axioms = []
+
+    if schemes:
+        top = _freq(schemes)
+        principles.append(f"{len(set(schemes))} distinct color schemes observed; "
+                          f"most common: '{top[0][0]}' ({top[0][1]} images)")
+
+    if layouts:
+        top = _freq(layouts)
+        principles.append(f"{len(set(layouts))} layout types observed; "
+                          f"dominant: '{top[0][0]}'")
+
+    if syms:
+        avg_sym = sum(syms) / len(syms) if syms else 0
+        laws.append(f"Mean symmetry: {avg_sym:.2f} (range {min(syms):.2f}-{max(syms):.2f})")
+
+    if contrast_vals:
+        avg_c = sum(contrast_vals) / len(contrast_vals) if contrast_vals else 0
+        axioms.append(f"Mean contrast: {avg_c:.2f}; "
+                      f"lightness range {min(lit_vals):.0f}-{max(lit_vals):.0f}")
+
+    card["core_principles"] = principles
+    card["layout_laws"] = laws
+    card["color_axioms"] = axioms
 
     target = os.path.join(get_library_dir(), "universal.json")
     os.makedirs(os.path.dirname(target), exist_ok=True)
