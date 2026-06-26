@@ -10,7 +10,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/你的用户名/aesthetic-lens.git
+git clone https://github.com/SNLCC/aesthetic-lens.git
 cd aesthetic-lens
 
 # 安装依赖（创建 venv + pip install）
