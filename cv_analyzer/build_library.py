@@ -146,7 +146,9 @@ def _build_style_card(style_tag: str, l1s: List[Dict], alias_map: Dict[str, str]
     for k, vals in ais.items():
         freq = defaultdict(int)
         for v in vals:
-            freq[v] += 1
+            # component_roles is a list — hashable-safe
+            key = v if not isinstance(v, list) else ", ".join(str(x) for x in v)
+            freq[key] += 1
         ai_summary[k] = sorted(freq.items(), key=lambda x: -x[1])[:3]
     if ai_summary:
         card["ai_patterns"] = ai_summary
