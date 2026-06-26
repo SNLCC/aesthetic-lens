@@ -14,6 +14,7 @@ from .composition import analyze_composition
 from .lighting import analyze_lighting
 from .spacing import analyze_spacing
 from .texture import analyze_texture
+from .pipeline import assemble_l1
 from .write_raw import write_raw, find_l1_by_source, get_library_dir
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "analyze_lighting",
     "analyze_spacing",
     "analyze_texture",
+    "assemble_l1",
     "build",
     "classify",
     "find_l1_by_source",
