@@ -177,7 +177,7 @@ def write_raw(
 
     record = _build_record(source_name, img_hash, cv_data, ai_interpretation, tags)
     with open(dest, "w", encoding="utf-8") as f:
-    safe_json_dump(record, f, indent=2)
+        safe_json_dump(record, f, indent=2)
 
     return os.path.abspath(dest)
 
