@@ -34,6 +34,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from .ai_fills_schema import validate_ai_fills
+from ._json_utils import safe_json_dump
+
 
 def _get_data_dir() -> str:
     """Return the root data directory for aesthetic-lens.
@@ -155,7 +158,7 @@ def write_raw(
                 dest = existing[-1]
                 record = _build_record(source_name, img_hash, cv_data, ai_interpretation, tags)
                 with open(dest, "w", encoding="utf-8") as f:
-                    json.dump(record, f, indent=2, ensure_ascii=False)
+                    safe_json_dump(record, f, indent=2)
                 return os.path.abspath(dest)
 
     # append: always create new file
@@ -174,7 +177,7 @@ def write_raw(
 
     record = _build_record(source_name, img_hash, cv_data, ai_interpretation, tags)
     with open(dest, "w", encoding="utf-8") as f:
-        json.dump(record, f, indent=2, ensure_ascii=False)
+    safe_json_dump(record, f, indent=2)
 
     return os.path.abspath(dest)
 
@@ -197,6 +200,8 @@ def _build_record(
         record["image_hash"] = image_hash
 
     if ai_interpretation:
+        # Validate against schema before writing
+        ai_interpretation = validate_ai_fills(ai_interpretation)
         record["ai_interpretation"] = ai_interpretation
         record["incomplete"] = False
     else:

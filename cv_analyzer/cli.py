@@ -15,7 +15,7 @@ Exit codes:
 - ``2``  — data error (e.g. image cannot be read)
 """
 
-import json
+from ._json_utils import safe_json_dumps
 import sys
 
 import click
@@ -31,11 +31,11 @@ def main(image_path, pretty):
     try:
         result = analyze(image_path)
         indent = 2 if pretty else None
-        click.echo(json.dumps(result, indent=indent))
+        click.echo(safe_json_dumps(result, indent=indent))
         if result.get("status") == "error":
             sys.exit(2)
     except Exception as e:
-        click.echo(json.dumps({"error": str(e)}), err=True)
+        click.echo(safe_json_dumps({"error": str(e)}), err=True)
         sys.exit(1)
 
 
