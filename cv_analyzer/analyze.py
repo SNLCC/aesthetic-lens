@@ -104,19 +104,16 @@ def analyze(image_path: str) -> Dict[str, Any]:
 
     # Expose AI-fill-required fields so downstream can discover them
     analyses["ai_fills_required"] = [
-        "color.scheme",
-        "composition.layout_type",
-        "texture.surface_type",
-        "lighting.light_quality",
-        "spacing.spacing_principle",
-        "components.component_roles",
-        # Typography (LLM vision only, no CV pre-processing)
-        "typography.hierarchy",
-        "typography.line_spacing",
-        "typography.text_density",
-        "typography.alignment",
-        "typography.font_style",
-        # Aesthetic interpretation
-        "style_influence",
+        ...
     ]
+    # Provide known tags so AI can choose to reuse or create new ones
+    try:
+        from .build_library import _load_index
+        idx = _load_index()
+        analyses["known_tags"] = {
+            "styles": sorted(idx.get("styles", [])),
+            "content_types": sorted(idx.get("content_types", [])),
+        }
+    except Exception:
+        analyses["known_tags"] = {"styles": [], "content_types": []}
     return analyses
