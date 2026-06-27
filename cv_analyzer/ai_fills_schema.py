@@ -18,16 +18,16 @@ from typing import Any, Dict, List, Literal, Optional, get_args
 # ------------------------------------------------------------------
 # allowed values per field
 # ------------------------------------------------------------------
-COLOR_SCHEMES = {"complementary", "analogous", "monochrome", "triadic"}
-LAYOUT_TYPES = {"centered", "rule-of-thirds", "diagonal", "asymmetric"}
-SURFACE_TYPES = {"smooth", "rough", "patterned", "grainy"}
-LIGHT_QUALITIES = {"soft", "harsh", "golden-hour", "flat", "dramatic"}
-SPACING_PRINCIPLES = {"breathing", "dense", "balanced", "spacious"}
-HIERARCHIES = {"3-level", "2-level", "uniform", "complex"}
-LINE_SPACINGS = {"tight", "medium", "loose"}
-TEXT_DENSITIES = {"sparse", "medium", "dense"}
-ALIGNMENTS = {"left", "center", "right", "justified", "mixed"}
-FONT_STYLES = {"serif", "sans-serif", "hand-drawn", "mixed", "monospace"}
+COLOR_SCHEMES = {"none", "complementary", "analogous", "monochrome", "triadic"}
+LAYOUT_TYPES = {"none", "centered", "rule-of-thirds", "diagonal", "asymmetric"}
+SURFACE_TYPES = {"none", "smooth", "rough", "patterned", "grainy"}
+LIGHT_QUALITIES = {"none", "soft", "harsh", "golden-hour", "flat", "dramatic"}
+SPACING_PRINCIPLES = {"none", "breathing", "dense", "balanced", "spacious"}
+HIERARCHIES = {"none", "3-level", "2-level", "uniform", "complex"}
+LINE_SPACINGS = {"none", "tight", "medium", "loose"}
+TEXT_DENSITIES = {"none", "sparse", "medium", "dense"}
+ALIGNMENTS = {"none", "left", "center", "right", "justified", "mixed"}
+FONT_STYLES = {"none", "serif", "sans-serif", "hand-drawn", "mixed", "monospace"}
 CONFIDENCE_LEVELS = {"high", "medium", "low"}
 
 # Field -> set of allowed values (None = free text)
