@@ -269,6 +269,7 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
 
     # Collect all AI interpretation values across all L1s
     schemes, layouts, surfaces, lights, spacings, roles = [], [], [], [], [], []
+    hierarchies, line_spacings, text_densities, alignments, font_styles, influences = [], [], [], [], [], []
     syms, contrast_vals, lit_vals = [], [], []
     for _, d in l1s:
         ai = d.get("ai_interpretation", {}) or {}
@@ -286,6 +287,18 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
             lights.append(ai["light_quality"])
         if ai.get("spacing_principle"):
             spacings.append(ai["spacing_principle"])
+        if ai.get("style_influence"):
+            influences.append(ai["style_influence"])
+        if ai.get("hierarchy"):
+            hierarchies.append(ai["hierarchy"])
+        if ai.get("line_spacing"):
+            line_spacings.append(ai["line_spacing"])
+        if ai.get("text_density"):
+            text_densities.append(ai["text_density"])
+        if ai.get("alignment"):
+            alignments.append(ai["alignment"])
+        if ai.get("font_style"):
+            font_styles.append(ai["font_style"])
         syms.append(comp.get("symmetry_score", 0))
         contrast_vals.append(light.get("contrast", 0))
         lit_vals.append((col.get("lightness_stats", {}) or {}).get("mean", 128))
@@ -303,6 +316,12 @@ def build_universal(l1s: List[Tuple[str, Dict]]) -> Dict:
         "surface_types": _freq(surfaces),
         "light_qualities": _freq(lights),
         "spacing_principles": _freq(spacings),
+        "hierarchies": _freq(hierarchies),
+        "line_spacings": _freq(line_spacings),
+        "text_densities": _freq(text_densities),
+        "alignments": _freq(alignments),
+        "font_styles": _freq(font_styles),
+        "style_influences": _freq(influences),
     }
 
     # Generate derived principles from the observed data
