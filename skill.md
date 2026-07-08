@@ -78,11 +78,11 @@ description: 从图片中提炼审美原则与设计理论，构建多层审美�
 - ❌ 不包含具体字体名（用层级关系替代）
 - ✅ 只输出可迁移的设计原则和约束区间
 
-## 依赖安装
+## 安装
 
 ```bash
-cd aesthetic-lens
-source scripts/install_deps.sh
+# 在项目目录下安装（安装到 .agents/skills/aesthetic-lens/）
+npx skills add SNLCC/aesthetic-lens
 ```
 
 ## 输出文件结构
@@ -90,7 +90,7 @@ source scripts/install_deps.sh
 数据直接存在 skill 目录下，跟随安装位置：
 
 - **开发期**: ``aesthetic-lens/library/``
-- **项目安装**: ``.reasonix/skills/aesthetic-lens/library/``
+- **项目安装**: ``.agents/skills/aesthetic-lens/library/``
 - **全局安装**: ``.../reasonix/skills/aesthetic-lens/library/``
 - **自定义**: ``export AESTHETIC_LENS_DATA_DIR=/your/path``
 

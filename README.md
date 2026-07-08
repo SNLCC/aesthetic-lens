@@ -6,17 +6,23 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-32%20passed-brightgreen)](.)
 
-## 快速开始
+## 安装
 
 ```bash
-# 克隆仓库
+# 在项目目录下安装（安装到 .agents/skills/aesthetic-lens/）
+npx skills add SNLCC/aesthetic-lens
+```
+
+> 安装完成后即可通过 `/esthetic-lens` 使用。
+
+## 开发
+
+如需本地开发，克隆仓库后按以下方式操作：
+
+```bash
 git clone https://github.com/SNLCC/aesthetic-lens.git
 cd aesthetic-lens
-
-# 安装依赖
 source scripts/install_deps.sh
-
-# 激活 venv
 source .venv/bin/activate       # Unix/Mac
 # 或 .venv\Scripts\activate     # Windows
 
